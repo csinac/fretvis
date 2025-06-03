@@ -59,17 +59,22 @@
 
     <script type="module">
     import { createStringBlock, createFretView } from './fretboardBlocks.js';
+    import { attachFretboardValidation } from './parseFretboard.js';
     
     const fretboardGallery = document.getElementById('fretboard-gallery');
     const addFretBtn = document.querySelector('.add-fret-btn');
 
     // Add fretboard logic
     addFretBtn.addEventListener('click', () => {
-        fretboardGallery.appendChild(createFretView());
+        const fretView = createFretView();
+        fretboardGallery.appendChild(fretView);
+        attachFretboardValidation(fretView);
     });
 
     // Initialize with one fretboard by default
-    fretboardGallery.appendChild(createFretView());
+    const initialFretView = createFretView();
+    fretboardGallery.appendChild(initialFretView);
+    attachFretboardValidation(initialFretView);
     </script>
 </body>
 </html>
