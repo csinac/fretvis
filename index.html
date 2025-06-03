@@ -4,103 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fretboard Visualizer</title>
-    <style>
-        :root {
-            --font-family: Arial, sans-serif;
-            --main-bg: #fafafa;
-            --container-bg: #fff;
-            --fret-view-bg: #f9f9f9;
-            --border-color: #ddd;
-            --accent: #1a73e8;
-            --danger: #d32f2f;
-            --placeholder-bg: #eee;
-            --placeholder-border: #bbb;
-            --placeholder-text: #888;
-            --box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-        }
-        body {
-            font-family: var(--font-family);
-            background: var(--main-bg);
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 900px;
-            margin: 30px auto;
-            padding: 24px;
-            background: var(--container-bg);
-            border-radius: 8px;
-            box-shadow: var(--box-shadow);
-        }
-        .controls {
-            display: flex;
-            gap: 24px;
-            margin-bottom: 24px;
-            align-items: center;
-        }
-        .fretboard-gallery {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-        .fret-view {
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background: var(--fret-view-bg);
-            padding: 16px;
-            position: relative;
-        }
-        .fret-view-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        .toggle-btn {
-            background: none;
-            border: none;
-            color: var(--accent);
-            cursor: pointer;
-            font-size: 1em;
-        }
-        .string-inputs {
-            margin-bottom: 12px;
-        }
-        .string-block {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 6px;
-            align-items: center;
-        }
-        .string-block input[type="text"] {
-            width: 60px;
-        }
-        .add-string-btn, .remove-string-btn, .remove-fret-btn, .add-fret-btn {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            padding: 4px 10px;
-            margin-left: 8px;
-            cursor: pointer;
-            font-size: 0.95em;
-        }
-        .remove-fret-btn {
-            background: var(--danger);
-        }
-        .fretboard-canvas-placeholder {
-            width: 800px;
-            height: 200px;
-            background: var(--placeholder-bg);
-            border: 1px dashed var(--placeholder-border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--placeholder-text);
-            font-size: 1.2em;
-            margin-top: 12px;
-        }
-    </style>
+    <link rel="stylesheet" href="fretboard.css">
 </head>
 <body>
     <div class="container">
@@ -130,6 +34,9 @@
                 <button class="toggle-btn" type="button">Hide Inputs</button>
             </div>
             <div class="fret-view-inputs">
+                <div class="fret-label-row" style="margin-bottom: 6px;">
+                    <label>Fret Label: <input type="text" class="fret-label-input" placeholder="Optional label (e.g. Cmaj7)"></label>
+                </div>
                 <div class="string-inputs">
                     <!-- String blocks will be inserted here -->
                 </div>
@@ -145,15 +52,24 @@
     <template id="string-block-template">
         <div class="string-block">
             <label>Label: <input type="text" class="string-label" value="E"></label>
-            <label>Frets: <input type="text" class="string-frets" placeholder="e.g. 3 or open"></label>
-            <label>Fingers: <input type="text" class="string-fingers" placeholder="e.g. 1,2"></label>
+            <label class="string-frets-fingers-label">Frets/Fingers: <input type="text" class="string-frets-fingers" placeholder="e.g. 3,1 5,3 open"></label>
             <button class="remove-string-btn" type="button">Remove</button>
         </div>
     </template>
 
-    <script>
-    // JavaScript for dynamic behavior will be added in the next step
-    // For now, the HTML structure is ready for wiring up.
+    <script type="module">
+    import { createStringBlock, createFretView } from './fretboardBlocks.js';
+    
+    const fretboardGallery = document.getElementById('fretboard-gallery');
+    const addFretBtn = document.querySelector('.add-fret-btn');
+
+    // Add fretboard logic
+    addFretBtn.addEventListener('click', () => {
+        fretboardGallery.appendChild(createFretView());
+    });
+
+    // Initialize with one fretboard by default
+    fretboardGallery.appendChild(createFretView());
     </script>
 </body>
 </html>
