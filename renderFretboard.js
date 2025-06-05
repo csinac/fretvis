@@ -51,7 +51,14 @@ export function renderFretboard({
     const ctx = canvas.getContext('2d');
     const numStrings = data.strings.length;
 
-    const isLeftHanded = handedness === 'left';
+    // Determine base handedness
+    let effectiveIsLeftHanded = (handedness === 'left');
+
+    // If it's UI "Front" view (audience perspective, viewpoint === 'top' in code),
+    // invert the handedness.
+    if (viewpoint === 'top') {
+        effectiveIsLeftHanded = !effectiveIsLeftHanded;
+    }
     const isFrontView = viewpoint === 'front';
 
     // Effective strings array for drawing based on viewpoint
@@ -110,8 +117,8 @@ export function renderFretboard({
     ctx.lineWidth = (minDisplayFret === 1) ? 6 : 2;
     ctx.strokeStyle = (minDisplayFret === 1) ? palette.nut : palette.fret;
     ctx.beginPath();
-    ctx.moveTo(isLeftHanded ? fbX + fretboardWidth : fbX, fbY);
-    ctx.lineTo(isLeftHanded ? fbX + fretboardWidth : fbX, fbY + fretboardHeight);
+    ctx.moveTo(effectiveIsLeftHanded ? fbX + fretboardWidth : fbX, fbY);
+    ctx.lineTo(effectiveIsLeftHanded ? fbX + fretboardWidth : fbX, fbY + fretboardHeight);
     ctx.stroke();
 
     // Draw subsequent fret wires
@@ -120,7 +127,7 @@ export function renderFretboard({
     currentX = fbX; // Reset for LTR accumulation
     for (let i = 0; i < numFretsToDraw; i++) {
         const fretWidth = baseFretWidths[i]; // Width of the current logical fret slot
-        if (isLeftHanded) {
+        if (effectiveIsLeftHanded) {
             // For left-handed, draw from right to left
             // The (i)-th fret wire (after nut) is at (fbX + fretboardWidth) - sum of widths up to (i-1)th reversed fret
             let xPos = fbX + fretboardWidth;
@@ -155,9 +162,9 @@ export function renderFretboard({
         // String label
         ctx.font = palette.stringLabelFont;
         ctx.fillStyle = palette.label;
-        ctx.textAlign = isLeftHanded ? 'left' : 'right';
+        ctx.textAlign = effectiveIsLeftHanded ? 'left' : 'right';
         ctx.textBaseline = 'middle';
-        const labelX = isLeftHanded ? (fbX + fretboardWidth + 10) : (fbX - 10);
+        const labelX = effectiveIsLeftHanded ? (fbX + fretboardWidth + 10) : (fbX - 10);
         ctx.fillText(stringData.label, labelX, stringY);
     }
 
@@ -169,7 +176,7 @@ export function renderFretboard({
     let visualAccumulatedWidth = 0; // Tracks width from the left edge of the fretboard drawing area (fbX)
     for (let i = 0; i < numFretsToDraw; i++) { // i is the visual index from left to right
         let fretNumToDisplay;
-        if (isLeftHanded) {
+        if (effectiveIsLeftHanded) {
             fretNumToDisplay = maxDisplayFret - i; // For LH, leftmost visual fret is maxDisplayFret
         } else { // Right-handed
             fretNumToDisplay = minDisplayFret + i;
@@ -188,7 +195,7 @@ export function renderFretboard({
         const stringY = fbY + s * 80; // s is visual index from top of canvas
         const stringData = displayStrings[s]; // Use potentially reversed string data
 
-        const openMutedMarkerX = isLeftHanded ? (fbX + fretboardWidth + sidePadding/2) : (fbX - sidePadding/2);
+        const openMutedMarkerX = effectiveIsLeftHanded ? (fbX + fretboardWidth + sidePadding/2) : (fbX - sidePadding/2);
 
         if (stringData.open) {
             ctx.fillStyle = palette.open;
@@ -211,7 +218,7 @@ export function renderFretboard({
                 if (pair.fret < minDisplayFret || pair.fret > maxDisplayFret) return;
 
                 let visualSlotIndex; // 0-based index of the visual slot from the left
-                if (isLeftHanded) {
+                if (effectiveIsLeftHanded) {
                     visualSlotIndex = maxDisplayFret - pair.fret;
                 } else { // Right-handed
                     visualSlotIndex = pair.fret - minDisplayFret;
