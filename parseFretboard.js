@@ -18,42 +18,54 @@ export function parseAndValidateFretboard(fretView) {
         let label = labelInputs[i].value || '';
         if (label.length > 3) label = label.slice(0, 3); // Truncate string label to 3 chars
         let ffRaw = ffInputs[i].value || '';
-        let pairs = [];
-        let usedFrets = [];
-        if (ffRaw.trim() !== '') {
-            // Allow multiple spaces, split on whitespace
+        let stringData = { label };
+        let usedFretsOnThisString = []; // Renamed to avoid conflict with outer 'usedFrets'
+
+        const trimmedInput = ffRaw.trim().toLowerCase();
+
+        if (trimmedInput === 'open') {
+            stringData.open = true;
+        } else if (trimmedInput === 'x') {
+            stringData.muted = true;
+        } else if (trimmedInput !== '') {
+            stringData.pairs = [];
             let items = ffRaw.trim().split(/\s+/);
             let seenFrets = new Set();
             for (let item of items) {
-                if (item.toLowerCase() === 'open') continue;
+                const lowerItem = item.toLowerCase();
+                if (lowerItem === 'open' || lowerItem === 'x') {
+                    error = `Cannot mix '${item}' with fret/finger pairs in string ${i + 1}`;
+                    break;
+                }
                 let [fret, ...fingerParts] = item.split(',');
                 let finger = fingerParts.join(',') || '';
-                // Validation: fret must be 1-99, finger can be anything (use only first 2 chars)
                 if (!/^\d{1,2}$/.test(fret)) {
-                    error = `Invalid fret number: '${fret}' in string ${i+1}`;
+                    error = `Invalid fret number: '${fret}' in string ${i + 1}`;
                     break;
                 }
                 let fretNum = parseInt(fret, 10);
                 if (fretNum < 1 || fretNum > 99) {
-                    error = `Fret number out of range: '${fret}' in string ${i+1}`;
+                    error = `Fret number out of range: '${fret}' in string ${i + 1}`;
                     break;
                 }
                 if (seenFrets.has(fretNum)) {
-                    error = `Duplicate fret '${fretNum}' in string ${i+1}`;
+                    error = `Duplicate fret '${fretNum}' in string ${i + 1}`;
                     break;
                 }
                 seenFrets.add(fretNum);
                 finger = finger.slice(0, 2);
-                pairs.push({ fret: fretNum, finger });
-                usedFrets.push(fretNum);
+                stringData.pairs.push({ fret: fretNum, finger });
+                usedFretsOnThisString.push(fretNum);
             }
+            if (error) break; // Stop processing this fretView if an error occurred in pairs
+        } else {
+            // Empty input, implies no fretted notes, not open, not muted
+            stringData.pairs = [];
         }
-        parsedStrings.push({
-            label,
-            pairs // Array of {fret, finger}
-        });
-        allFrets = allFrets.concat(usedFrets);
-        if (error) break;
+
+        parsedStrings.push(stringData);
+        allFrets = allFrets.concat(usedFretsOnThisString);
+        if (error) break; // Stop processing further strings if an error occurred
     }
 
     // Validation: max fret difference (excluding open)
@@ -84,9 +96,16 @@ export function parseAndValidateFretboard(fretView) {
  */
 const lastValidResults = new WeakMap();
 
-export function attachFretboardValidation(fretView) {
-    const allInputs = fretView.querySelectorAll('.string-label, .string-frets-fingers, .fret-label-input');
-    function validateAndLog() {
+export function attachFretboardValidation(fretView, onUpdateCallback) {
+    // Event delegation: Attach a single listener to fretView
+    fretView.addEventListener('input', function(event) {
+        // Check if the event target matches our input selectors
+        if (event.target.matches('.string-label, .string-frets-fingers, .fret-label-input')) {
+            validateAndTriggerUpdate();
+        }
+    });
+
+    function validateAndTriggerUpdate() {
         const currentResult = parseAndValidateFretboard(fretView);
 
         if (currentResult.error) {
@@ -94,18 +113,22 @@ export function attachFretboardValidation(fretView) {
             lastValidResults.delete(fretView); // Clear last valid result on error
         } else {
             const previousResult = lastValidResults.get(fretView);
-            // Stringify for comparison as they are objects
             if (previousResult && JSON.stringify(currentResult) === JSON.stringify(previousResult)) {
-                console.log('No effective changes after parsing. Skipping log.');
+                // console.log('No effective changes after parsing. Skipping primary log, but will still trigger update.');
+                // No console log here to reduce noise, but we still call onUpdateCallback
             } else {
                 console.log('Parsed fretboard:', currentResult);
                 lastValidResults.set(fretView, currentResult);
             }
         }
+        
+        // Always call the onUpdateCallback if it's a function, so UI can react
+        // (e.g. to show/hide canvas based on error, or re-render)
+        if (typeof onUpdateCallback === 'function') {
+            onUpdateCallback();
+        }
     }
-    allInputs.forEach(input => {
-        input.addEventListener('input', validateAndLog);
-    });
-    // Run once on attach
-    validateAndLog();
+
+    // Run once on attach to perform initial validation and rendering
+    validateAndTriggerUpdate();
 }

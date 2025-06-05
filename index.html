@@ -42,8 +42,8 @@
                 </div>
                 <button class="add-string-btn" type="button">Add String</button>
             </div>
-            <div class="fretboard-canvas-placeholder">
-                Fretboard rendering placeholder
+            <div class="fret-view-diagram">
+                <!-- Canvas will be inserted here by ensureCanvas -->
             </div>
             <button class="remove-fret-btn" type="button">Remove Fretboard</button>
         </div>
@@ -59,22 +59,88 @@
 
     <script type="module">
     import { createStringBlock, createFretView } from './fretboardBlocks.js';
-    import { attachFretboardValidation } from './parseFretboard.js';
+    import { attachFretboardValidation, parseAndValidateFretboard } from './parseFretboard.js';
+    import { renderFretboard, palette } from './renderFretboard.js';
     
     const fretboardGallery = document.getElementById('fretboard-gallery');
     const addFretBtn = document.querySelector('.add-fret-btn');
+    // handednessSelect and viewpointSelect will be queried directly when needed
+
+    function ensureCanvas(fretView) {
+        let canvas = fretView.querySelector('canvas.fretboard-canvas');
+        if (!canvas) {
+            const canvasContainer = fretView.querySelector('.fret-view-diagram'); // Assuming you have a container for the canvas
+            if(canvasContainer){
+                canvas = document.createElement('canvas');
+                canvas.className = 'fretboard-canvas';
+                canvas.style.display = 'block'; // Default to block, might be hidden by renderAll if error
+                canvas.style.margin = '20px auto'; // Center it
+                canvasContainer.appendChild(canvas);
+            } else {
+                // Fallback if no specific container, append to fretView itself
+                console.warn('Canvas container .fret-view-diagram not found, appending canvas to fretView root.');
+                canvas = document.createElement('canvas');
+                canvas.className = 'fretboard-canvas';
+                canvas.style.display = 'block';
+                canvas.style.margin = '20px auto';
+                fretView.appendChild(canvas);
+            }
+        }
+        return canvas;
+    }
+
+    function renderAllFretboards() {
+        const fretViews = fretboardGallery.querySelectorAll('.fret-view');
+        fretViews.forEach(fretView => {
+            const parsedData = parseAndValidateFretboard(fretView);
+            const canvas = ensureCanvas(fretView);
+            if (!canvas) return; // Should not happen if ensureCanvas works
+
+            if (!parsedData.error) {
+                const currentHandedness = document.querySelector('input[name="handedness"]:checked').value;
+                const currentViewpoint = document.querySelector('input[name="viewpoint"]:checked').value;
+                renderFretboard({
+                    canvas: canvas,
+                    data: parsedData,
+                    handedness: currentHandedness,
+                    viewpoint: currentViewpoint
+                });
+                canvas.style.display = 'block'; // Ensure canvas is visible for valid data
+            } else {
+                // Optional: Clear canvas or hide it on error
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                canvas.style.display = 'none'; // Hide canvas on error
+                // You could also draw an error message on the canvas here
+            }
+        });
+    }
 
     // Add fretboard logic
     addFretBtn.addEventListener('click', () => {
-        const fretView = createFretView();
+        const fretView = createFretView(renderAllFretboards);
         fretboardGallery.appendChild(fretView);
-        attachFretboardValidation(fretView);
+        attachFretboardValidation(fretView, renderAllFretboards); // Pass callback
+        renderAllFretboards(); // Initial render for the new fretView
     });
 
     // Initialize with one fretboard by default
-    const initialFretView = createFretView();
+    const initialFretView = createFretView(renderAllFretboards);
     fretboardGallery.appendChild(initialFretView);
-    attachFretboardValidation(initialFretView);
+    attachFretboardValidation(initialFretView, renderAllFretboards); // Pass callback
+    renderAllFretboards(); // Initial render
+
+    // Event listeners for global controls
+    document.querySelectorAll('input[name="handedness"]').forEach(radio => {
+        radio.addEventListener('change', renderAllFretboards);
+    });
+    document.querySelectorAll('input[name="viewpoint"]').forEach(radio => {
+        radio.addEventListener('change', renderAllFretboards);
+    });
+
+    // Ensure initial render if content is already there (e.g. page refresh with form data)
+    // This might be redundant if the above initialFretView logic always runs on load.
+    // renderAllFretboards(); 
     </script>
 </body>
 </html>
