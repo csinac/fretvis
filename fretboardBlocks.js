@@ -20,6 +20,33 @@ export function createStringBlock(onRemoveAction, // This is now specifically fo
     return stringBlock;
 }
 
+// Helper to open a specific fret input section
+export function openFretInput(fretViewElement) {
+    const inputsSection = fretViewElement.querySelector('.fret-view-inputs');
+    const toggleBtn = fretViewElement.querySelector('.toggle-btn');
+    if (inputsSection && toggleBtn) {
+        inputsSection.style.display = '';
+        toggleBtn.textContent = 'Hide Inputs';
+    }
+}
+
+// Helper to close a specific fret input section
+export function closeFretInput(fretViewElement) {
+    const inputsSection = fretViewElement.querySelector('.fret-view-inputs');
+    const toggleBtn = fretViewElement.querySelector('.toggle-btn');
+    if (inputsSection && toggleBtn) {
+        inputsSection.style.display = 'none';
+        toggleBtn.textContent = 'Show Inputs';
+    }
+}
+
+// Helper to close all fret input sections in the gallery
+export function closeAllFretInputs(galleryElement) {
+    if (!galleryElement) return;
+    const fretViews = galleryElement.querySelectorAll('.fret-view');
+    fretViews.forEach(fv => closeFretInput(fv));
+}
+
 // Utility: Create a new fretboard view
 export function createFretView(onActionRequiringRender, initialData = null) {
     const fretViewTemplate = document.getElementById('fret-view-template');
@@ -30,6 +57,10 @@ export function createFretView(onActionRequiringRender, initialData = null) {
     const toggleBtn = fretView.querySelector('.toggle-btn');
     const inputsSection = fretView.querySelector('.fret-view-inputs');
     const titleInput = fretView.querySelector('.fret-label-input');
+
+    // Default to closed
+    inputsSection.style.display = 'none';
+    toggleBtn.textContent = 'Show Inputs';
 
     if (initialData && initialData.title) {
         titleInput.value = initialData.title;
@@ -72,14 +103,16 @@ export function createFretView(onActionRequiringRender, initialData = null) {
         if (onActionRequiringRender) onActionRequiringRender();
     });
 
-    // Toggle input section
+    // Toggle input section with accordion behavior
     toggleBtn.addEventListener('click', () => {
-        if(inputsSection.style.display === 'none') {
-            inputsSection.style.display = '';
-            toggleBtn.textContent = 'Hide Inputs';
-        } else {
-            inputsSection.style.display = 'none';
-            toggleBtn.textContent = 'Show Inputs';
+        const galleryElement = fretView.closest('.fretboard-gallery'); // Find the main gallery container
+        if (inputsSection.style.display === 'none') { // If currently closed, about to open
+            if (galleryElement) {
+                closeAllFretInputs(galleryElement); // Close all others first
+            }
+            openFretInput(fretView); // Then open this one
+        } else { // If currently open, about to close
+            closeFretInput(fretView); // Just close this one
         }
     });
 

@@ -80,7 +80,7 @@
     </template>
 
     <script type="module">
-    import { createStringBlock, createFretView } from './fretboardBlocks.js';
+    import { createStringBlock, createFretView, openFretInput, closeAllFretInputs } from './fretboardBlocks.js';
     import { attachFretboardValidation, parseAndValidateFretboard } from './parseFretboard.js';
     import { renderFretboard, palette } from './renderFretboard.js';
     import { initGallery, addFretboardToActiveCollection, handleFretboardChange, updateActiveCollectionVisualControls, updateActiveCollectionName, getCollectionsForDebug } from './galleryManager.js';
@@ -166,7 +166,9 @@
         createFretView: createFretView, 
         attachFretboardValidation: attachFretboardValidation, 
         renderDiagrams: renderAllFretboardDiagrams, 
-        renderDiagramsAndSaveState: renderDiagramsAndHandleFretboardChange 
+        renderDiagramsAndSaveState: renderDiagramsAndHandleFretboardChange,
+        openFretInput: openFretInput, // Pass the function itself
+        closeAllFretInputs: closeAllFretInputs // Pass the function itself
     });
 
     // Event listener for the main 'Add Fretboard' button (delegates to galleryManager)

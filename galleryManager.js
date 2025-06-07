@@ -6,6 +6,7 @@ let nextCollectionId = 1;
 let newCollectionCounter = 1; // Counter for default collection names like "Collection N"
 let domElements = {};
 let callbacks = {};
+let openFretInputCallback, closeAllFretInputsCallback; // To store callbacks from fretboardBlocks.js
 const UNTITLED_COLLECTION_NAME = "untitled collection";
 const PRELOAD_FILES = [
     'preload/basic_6_string_guitar_chords.json',
@@ -75,18 +76,22 @@ function loadCollectionIntoUI(collectionId) {
     domElements.fretboardGallery.innerHTML = ''; // Clear current fretboards
 
     if (collection.fretboards && collection.fretboards.length > 0) {
-        collection.fretboards.forEach(fretboardData => {
-            const fretView = callbacks.createFretView(callbacks.renderDiagramsAndSaveState, fretboardData);
+        collection.fretboards.forEach(fbData => {
+            const fretView = callbacks.createFretView(callbacks.renderDiagramsAndSaveState, fbData);
             domElements.fretboardGallery.appendChild(fretView);
             callbacks.attachFretboardValidation(fretView, callbacks.renderDiagramsAndSaveState);
         });
+
+        if (closeAllFretInputsCallback) {
+            closeAllFretInputsCallback(domElements.fretboardGallery);
+        }
     } else {
         // If collection is empty, add one default fretboard view
         const defaultFretView = callbacks.createFretView(callbacks.renderDiagramsAndSaveState);
         domElements.fretboardGallery.appendChild(defaultFretView);
         callbacks.attachFretboardValidation(defaultFretView, callbacks.renderDiagramsAndSaveState);
     }
-    callbacks.renderDiagrams(); // Render once after loading all and setting controls
+    callbacks.renderDiagramsAndSaveState(); // Render once after loading all and setting controls
 }
 
 function switchCollection(collectionId) {
@@ -142,6 +147,15 @@ function addNewCollection() {
     newCollectionCounter++; // Increment for the next new collection
     setActiveCollection(newCollection.id); // This will handle setting activeId, localStorage, and all UI updates.
 
+    // After the new collection with one fretboard is loaded and rendered (via setActiveCollection -> loadCollectionIntoUI),
+    // open the inputs for that first fretboard.
+    if (openFretInputCallback && domElements.fretboardGallery.firstChild) {
+        const firstFretView = domElements.fretboardGallery.querySelector('.fret-view'); // Get the first one
+        if (firstFretView) {
+            openFretInputCallback(firstFretView);
+        }
+    }
+
     // Enable/disable remove button based on new collection count
     if (domElements.removeCollectionBtn) {
         domElements.removeCollectionBtn.disabled = collections.length <= 1;
@@ -188,8 +202,23 @@ function setActiveCollection(collectionId) {
 
 export function addFretboardToActiveCollection() {
     if (!activeCollectionId) return;
-    const fretView = callbacks.createFretView(callbacks.renderDiagramsAndSaveState);
+    const newFretboardData = {
+        title: '',
+        strings: [
+            { label: 'E', ffValue: '' }, { label: 'A', ffValue: '' },
+            { label: 'D', ffValue: '' }, { label: 'G', ffValue: '' },
+            { label: 'B', ffValue: '' }, { label: 'e', ffValue: '' }
+        ]
+    };
+    const fretView = callbacks.createFretView(callbacks.renderDiagramsAndSaveState, newFretboardData);
+    // Ensure other fret inputs are closed before adding and opening the new one
+    if (closeAllFretInputsCallback) {
+        closeAllFretInputsCallback(domElements.fretboardGallery);
+    }
     domElements.fretboardGallery.appendChild(fretView);
+    if (openFretInputCallback) {
+        openFretInputCallback(fretView); // Open the newly added fret view's inputs
+    }
     callbacks.attachFretboardValidation(fretView, callbacks.renderDiagramsAndSaveState);
     callbacks.renderDiagramsAndSaveState(); // Render and save state
 }
@@ -265,6 +294,8 @@ export async function initGallery(config) {
         renderDiagrams: config.renderDiagrams,
         renderDiagramsAndSaveState: config.renderDiagramsAndSaveState
     };
+    openFretInputCallback = config.openFretInput; // Store the imported function
+    closeAllFretInputsCallback = config.closeAllFretInputs; // Store the imported function
 
     domElements.addCollectionBtn.addEventListener('click', addNewCollection);
     domElements.removeCollectionBtn.addEventListener('click', removeActiveCollection);
@@ -309,23 +340,6 @@ export async function initGallery(config) {
         }
     });
     collections = mergedCollections;
-
-    // Initialize newCollectionCounter based on existing collection names
-    if (collections.length > 0) {
-        let maxN = 0;
-        collections.forEach(c => {
-            const match = c.name.match(/^Collection (\d+)$/);
-            if (match && match[1]) {
-                const n = parseInt(match[1], 10);
-                if (n > maxN) {
-                    maxN = n;
-                }
-            }
-        });
-        newCollectionCounter = maxN + 1;
-    } else {
-        newCollectionCounter = 1;
-    }
 
     let activeIdFromStorage = localStorage.getItem('activeFretboardCollectionId');
     if (activeIdFromStorage === "null" || activeIdFromStorage === "undefined") {
