@@ -58,6 +58,24 @@ body {
     background-color: #cccccc;
     cursor: not-allowed;
 }
+.collection-title-control {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.collection-title-control label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.collection-title-control input[type="text"] {
+    width: calc(100% - 22px); /* Account for padding and border */
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
 #collection-list {
     list-style-type: none;
     padding: 0;

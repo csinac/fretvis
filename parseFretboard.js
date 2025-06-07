@@ -113,11 +113,7 @@ export function attachFretboardValidation(fretView, onUpdateCallback) {
             lastValidResults.delete(fretView); // Clear last valid result on error
         } else {
             const previousResult = lastValidResults.get(fretView);
-            if (previousResult && JSON.stringify(currentResult) === JSON.stringify(previousResult)) {
-                // console.log('No effective changes after parsing. Skipping primary log, but will still trigger update.');
-                // No console log here to reduce noise, but we still call onUpdateCallback
-            } else {
-                console.log('Parsed fretboard:', currentResult);
+            if (!(previousResult && JSON.stringify(currentResult) === JSON.stringify(previousResult))) {
                 lastValidResults.set(fretView, currentResult);
             }
         }
