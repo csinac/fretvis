@@ -131,6 +131,7 @@ function addNewCollection() {
     const newCollection = {
         id: newCollectionId,
         name: defaultName,
+        nameChangedByUser: false, // New collections start with default names, not yet changed by user
         handedness: 'right',
         viewpoint: 'top',
         fretboards: [{
@@ -193,11 +194,45 @@ function setActiveCollection(collectionId) {
     }
 
     activeCollectionId = collectionId;
-    localStorage.setItem('activeFretboardCollectionId', activeCollectionId);
-    
+    saveCollectionsToLocalStorage();
     loadCollectionIntoUI(activeCollectionId); // Loads data into inputs, sets main header
     renderGalleryList();                      // Re-renders the list, should highlight the new activeId
     callbacks.renderDiagramsAndSaveState();   // Renders fretboards
+}
+
+function hasMeaningfulData(collection) {
+    // Ensure collection and fretboards exist for fret data check
+    const hasFretData = collection && collection.fretboards && collection.fretboards.length > 0 &&
+        collection.fretboards.some(fretboard => 
+            fretboard.strings && fretboard.strings.length > 0 &&
+            fretboard.strings.some(str => str.ffValue && str.ffValue.trim() !== '')
+        );
+
+    if (hasFretData) {
+        return true;
+    }
+
+    // Check if the name was changed by the user
+    if (collection && collection.nameChangedByUser === true) {
+        return true;
+    }
+
+    let result = false;
+    if (collection && collection.fretboards && collection.fretboards.length > 0) {
+        result = collection.fretboards.some(fretboard => {
+            if (!fretboard.strings || fretboard.strings.length === 0) {
+                return false;
+            }
+            return fretboard.strings.some(str => str.ffValue && str.ffValue.trim() !== '');
+        });
+    }
+    return false;
+}
+
+function saveCollectionsToLocalStorage() {
+    const collectionsToSave = collections.filter(hasMeaningfulData);
+    localStorage.setItem('fretboardCollections', JSON.stringify(collectionsToSave));
+    localStorage.setItem('activeFretboardCollectionId', activeCollectionId);
 }
 
 export function addFretboardToActiveCollection() {
@@ -227,11 +262,14 @@ export function updateActiveCollectionName(newName) {
     if (!activeCollectionId) return;
     const activeCollection = collections.find(c => c.id === activeCollectionId);
     if (activeCollection) {
-        activeCollection.name = newName;
-        renderGalleryList(); // Update the name in the list
-        // No need to call saveActiveCollectionState here as it's called by input event which also calls this.
-        // Or, if this is the primary way to change name, it should call save.
-        // For now, assume saveActiveCollectionState will be called by the input event handler in index.html after this.
+        const newTrimmedName = newName.trim() === "" ? UNTITLED_COLLECTION_NAME : newName.trim();
+        if (activeCollection.name !== newTrimmedName) {
+            activeCollection.nameChangedByUser = true; // Mark that the user explicitly changed the name
+        }
+        activeCollection.name = newTrimmedName;
+        loadCollectionIntoUI(activeCollectionId); // Reloads UI, including main header title
+        saveCollectionsToLocalStorage(); // Save immediately after name change
+        renderGalleryList(); // Update the name in the gallery list
     }
 }
 
@@ -278,6 +316,8 @@ export function getCollectionsForDebug() {
 }
 
 export async function initGallery(config) {
+    const rawStoredCollections = localStorage.getItem('fretboardCollections');
+    const rawActiveId = localStorage.getItem('activeFretboardCollectionId');
     domElements = {
         fretboardGallery: config.fretboardGallery,
         addCollectionBtn: config.addCollectionBtn,
@@ -332,6 +372,10 @@ export async function initGallery(config) {
     // localStorage takes precedence for matching IDs
     const mergedCollections = [...preloaded];
     localStorageCollections.forEach(storedCollection => {
+        // Ensure nameChangedByUser defaults for older items from localStorage if not present
+        if (storedCollection.nameChangedByUser === undefined) {
+            storedCollection.nameChangedByUser = false;
+        }
         const existingIndex = mergedCollections.findIndex(mc => mc.id === storedCollection.id);
         if (existingIndex !== -1) {
             mergedCollections[existingIndex] = storedCollection; // Overwrite with stored version
@@ -340,6 +384,19 @@ export async function initGallery(config) {
         }
     });
     collections = mergedCollections;
+
+    // Determine newCollectionCounter based on existing collection names
+    let maxCollectionNum = 0;
+    collections.forEach(collection => {
+        const match = collection.name.match(/^Collection (\d+)$/);
+        if (match && match[1]) {
+            const num = parseInt(match[1], 10);
+            if (num > maxCollectionNum) {
+                maxCollectionNum = num;
+            }
+        }
+    });
+    newCollectionCounter = maxCollectionNum + 1;
 
     let activeIdFromStorage = localStorage.getItem('activeFretboardCollectionId');
     if (activeIdFromStorage === "null" || activeIdFromStorage === "undefined") {
@@ -382,6 +439,9 @@ export async function initGallery(config) {
 }
 
 export function handleFretboardChange() {
-    saveActiveCollectionState();
-    callbacks.renderDiagrams(); // Re-render after saving state
+    saveActiveCollectionState(); // Updates the 'collections' array in memory
+    saveCollectionsToLocalStorage(); // Attempt to save all meaningful collections
+    if (callbacks.renderDiagrams) { // Corrected: was callbacks.renderAllFretboardDiagrams
+        callbacks.renderDiagrams(); // Corrected: was callbacks.renderAllFretboardDiagrams
+    }
 }
