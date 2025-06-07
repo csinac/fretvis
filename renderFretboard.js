@@ -41,6 +41,7 @@ export function renderFretboard({
     handedness = 'right', // or 'left'
     viewpoint = 'top',    // or 'front'
 }) {
+
     if (!canvas || !data || !data.strings || data.strings.length === 0) {
         if(canvas) {
             const ctx = canvas.getContext('2d');

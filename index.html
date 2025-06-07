@@ -7,7 +7,17 @@
     <link rel="stylesheet" href="fretboard.css">
 </head>
 <body>
-    <div class="container">
+    <div class="app-container">
+        <div id="gallery-panel">
+            <h2>Diagram Collections</h2>
+            <button id="add-collection-btn" type="button">Add New Collection</button>
+            <ul id="collection-list">
+                <!-- Collection items will be populated here -->
+            </ul>
+            <button id="remove-collection-btn" type="button" disabled>Remove Selected Collection</button>
+        </div>
+        <div id="main-content">
+            <div class="container">
         <h1>Fretboard Visualiser</h1>
         <p style="margin-bottom: 12px;">A work-in-progress vibe coding experiment.</p>
         <p>
@@ -70,6 +80,14 @@
     
     const fretboardGallery = document.getElementById('fretboard-gallery');
     const addFretBtn = document.querySelector('.add-fret-btn');
+    const addCollectionBtn = document.getElementById('add-collection-btn');
+    const removeCollectionBtn = document.getElementById('remove-collection-btn');
+    const collectionList = document.getElementById('collection-list');
+
+    let collections = [];
+    let activeCollectionId = null;
+    let nextCollectionId = 1;
+
     // handednessSelect and viewpointSelect will be queried directly when needed
 
     function ensureCanvas(fretView) {
@@ -136,6 +154,185 @@
     attachFretboardValidation(initialFretView, renderAllFretboards); // Pass callback
     renderAllFretboards(); // Initial render
 
+    // --- Gallery Management Functions ---
+    function generateCollectionId() {
+        return `collection-${nextCollectionId++}`;
+    }
+
+    function saveActiveCollectionState() {
+        if (!activeCollectionId) return;
+        const activeCollection = collections.find(c => c.id === activeCollectionId);
+        if (!activeCollection) return;
+
+        activeCollection.fretboards = [];
+        const fretViews = fretboardGallery.querySelectorAll('.fret-view');
+        fretViews.forEach(fretView => {
+            const titleInput = fretView.querySelector('.fret-label-input');
+            const stringBlocks = fretView.querySelectorAll('.string-block');
+            let stringsData = [];
+            stringBlocks.forEach(sb => {
+                stringsData.push({
+                    label: sb.querySelector('.string-label').value,
+                    ffValue: sb.querySelector('.string-frets-fingers').value
+                });
+            });
+            activeCollection.fretboards.push({
+                title: titleInput ? titleInput.value : '',
+                strings: stringsData
+            });
+        });
+
+    }
+
+    function loadCollectionIntoUI(collectionId) {
+        const collection = collections.find(c => c.id === collectionId);
+        if (!collection) return;
+
+        fretboardGallery.innerHTML = ''; // Clear current fretboards
+
+        if (collection.fretboards && collection.fretboards.length > 0) {
+            collection.fretboards.forEach(fretboardData => {
+                // Pass true for isInitialLoad to use fretboardData
+                const fretView = createFretView(renderAllFretboardsAndSaveState, fretboardData); 
+                fretboardGallery.appendChild(fretView);
+                attachFretboardValidation(fretView, renderAllFretboardsAndSaveState);
+            });
+        } else {
+            // If collection is empty, perhaps add one default fretboard or leave it empty
+            // For now, let's add one default if the collection is empty and just loaded
+            const defaultFretView = createFretView(renderAllFretboardsAndSaveState);
+            fretboardGallery.appendChild(defaultFretView);
+            attachFretboardValidation(defaultFretView, renderAllFretboardsAndSaveState);
+        }
+        renderAllFretboards(); // Render once after loading all
+    }
+
+    function switchCollection(collectionId) {
+        if (activeCollectionId === collectionId) return; // Already active
+
+        saveActiveCollectionState(); // Save state of the outgoing collection
+
+        activeCollectionId = collectionId;
+        loadCollectionIntoUI(collectionId);
+        renderGalleryList();
+        removeCollectionBtn.disabled = collections.length <= 1;
+
+    }
+
+    function renderGalleryList() {
+        collectionList.innerHTML = '';
+        collections.forEach(collection => {
+            const li = document.createElement('li');
+            li.textContent = collection.name;
+            li.dataset.collectionId = collection.id;
+            if (collection.id === activeCollectionId) {
+                li.classList.add('active');
+            }
+            li.addEventListener('click', () => switchCollection(collection.id));
+            collectionList.appendChild(li);
+        });
+        removeCollectionBtn.disabled = collections.length <= 1 || !activeCollectionId;
+    }
+
+    function addNewCollection() {
+        saveActiveCollectionState(); // Save current before adding new one
+
+        const newId = generateCollectionId();
+        const newCollection = {
+            id: newId,
+            name: `Collection ${collections.length + 1}`,
+            fretboards: [] // Starts empty, or with one default fretboard
+        };
+        collections.push(newCollection);
+        activeCollectionId = newId;
+        
+        // Add one default fretboard to the new collection's data structure
+        // This will be picked up by loadCollectionIntoUI
+        newCollection.fretboards.push({
+            title: '',
+            strings: [
+                { label: 'E', ffValue: '' }, { label: 'A', ffValue: '' },
+                { label: 'D', ffValue: '' }, { label: 'G', ffValue: '' },
+                { label: 'B', ffValue: '' }, { label: 'e', ffValue: '' }
+            ]
+        });
+
+        loadCollectionIntoUI(newId);
+        renderGalleryList();
+
+    }
+
+    function removeActiveCollection() {
+        if (!activeCollectionId || collections.length <= 1) {
+            alert("Cannot remove the last collection.");
+            return;
+        }
+        if (!confirm(`Are you sure you want to delete the collection '${collections.find(c=>c.id === activeCollectionId).name}'?`)) {
+            return;
+        }
+
+        collections = collections.filter(c => c.id !== activeCollectionId);
+        let newActiveId = null;
+        if (collections.length > 0) {
+            newActiveId = collections[0].id; 
+        }
+        activeCollectionId = null; // Temporarily nullify before switching
+        if (newActiveId) {
+            switchCollection(newActiveId);
+        } else {
+            fretboardGallery.innerHTML = ''; // Clear view if no collections left (shouldn't happen due to check)
+            renderGalleryList();
+        }
+        console.log("Removed collection, new active:", activeCollectionId);
+    }
+
+    function renderAllFretboardsAndSaveState() {
+        renderAllFretboards();
+        saveActiveCollectionState();
+    }
+
+    // Modify renderAllFretboards to use the new callback if needed by string/fret removal
+    // The existing renderAllFretboards function itself is fine, but the callbacks passed to createFretView etc.
+    // should be renderAllFretboardsAndSaveState
+
+    // --- Initialization and Event Listeners ---
+    addCollectionBtn.addEventListener('click', addNewCollection);
+    removeCollectionBtn.addEventListener('click', removeActiveCollection);
+
+    // Initial setup
+    function initializeApp() {
+        if (collections.length === 0) {
+            addNewCollection(); // Creates the first collection and makes it active
+        } else {
+            // This case might be for future state loading from localStorage/JSON
+            if (!activeCollectionId && collections.length > 0) {
+                activeCollectionId = collections[0].id;
+            }
+            loadCollectionIntoUI(activeCollectionId);
+            renderGalleryList();
+        }
+        // Ensure the 'Add Fretboard' button adds to the active collection and saves state
+        // The renderAllFretboardsAndSaveState callback handles saving.
+    }
+
+    // Add fretboard logic (operates on the active collection)
+    addFretBtn.addEventListener('click', () => {
+        if (!activeCollectionId) return; // Should not happen if app is initialized
+        // createFretView now needs the modified callback
+        const fretView = createFretView(renderAllFretboardsAndSaveState);
+        fretboardGallery.appendChild(fretView);
+        attachFretboardValidation(fretView, renderAllFretboardsAndSaveState);
+        renderAllFretboardsAndSaveState(); // Render and save after adding new fret view
+    });
+
+    // Initialize with one fretboard by default (now handled by addNewCollection)
+    // const initialFretView = createFretView(renderAllFretboardsAndSaveState);
+    // fretboardGallery.appendChild(initialFretView);
+    // attachFretboardValidation(initialFretView, renderAllFretboardsAndSaveState);
+    // renderAllFretboardsAndSaveState(); // Initial render & save
+
+    initializeApp();
+
     // Event listeners for global controls
     document.querySelectorAll('input[name="handedness"]').forEach(radio => {
         radio.addEventListener('change', renderAllFretboards);
@@ -148,5 +345,7 @@
     // This might be redundant if the above initialFretView logic always runs on load.
     // renderAllFretboards(); 
     </script>
+        </div>
+    </div>
 </body>
 </html>

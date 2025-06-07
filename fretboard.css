@@ -16,14 +16,78 @@ body {
     background: var(--main-bg);
     margin: 0;
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+.app-container {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
+#gallery-panel {
+    width: 250px;
+    min-width: 200px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-right: 1px solid #dee2e6;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+#gallery-panel h2 {
+    margin-top: 0;
+    font-size: 1.2em;
+    color: #333;
+}
+#gallery-panel button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+#gallery-panel button:hover {
+    background-color: #0056b3;
+}
+#gallery-panel button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+#collection-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 10px 0;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+#collection-list li {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    font-size: 0.95em;
+}
+#collection-list li:hover {
+    background-color: #e9ecef;
+}
+#collection-list li.active {
+    background-color: #007bff;
+    color: white;
+    font-weight: bold;
+}
+#main-content {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background-color: #fff;
 }
 .container {
     max-width: 900px;
-    margin: 30px auto;
-    padding: 24px;
-    background: var(--container-bg);
-    border-radius: 8px;
-    box-shadow: var(--box-shadow);
+    margin: 0 auto;
 }
 .controls {
     display: flex;
