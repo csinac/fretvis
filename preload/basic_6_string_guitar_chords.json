@@ -1,0 +1,63 @@
+{
+  "id": "preloaded-6-string-guitar",
+  "name": "Basic 6-String Guitar Chords",
+  "handedness": "right",
+  "viewpoint": "top",
+  "fretboards": [
+    {
+      "title": "C Major",
+      "strings": [
+        { "label": "E", "ffValue": "x" },
+        { "label": "A", "ffValue": "3,3" },
+        { "label": "D", "ffValue": "2,2" },
+        { "label": "G", "ffValue": "open" },
+        { "label": "B", "ffValue": "1,1" },
+        { "label": "e", "ffValue": "open" }
+      ]
+    },
+    {
+      "title": "G Major",
+      "strings": [
+        { "label": "E", "ffValue": "3,2" },
+        { "label": "A", "ffValue": "2,1" },
+        { "label": "D", "ffValue": "open" },
+        { "label": "G", "ffValue": "open" },
+        { "label": "B", "ffValue": "open" },
+        { "label": "e", "ffValue": "3,3" }
+      ]
+    },
+    {
+      "title": "Am",
+      "strings": [
+        { "label": "E", "ffValue": "x" },
+        { "label": "A", "ffValue": "open" },
+        { "label": "D", "ffValue": "2,2" },
+        { "label": "G", "ffValue": "2,3" },
+        { "label": "B", "ffValue": "1,1" },
+        { "label": "e", "ffValue": "open" }
+      ]
+    },
+    {
+      "title": "E Major",
+      "strings": [
+        { "label": "E", "ffValue": "open" },
+        { "label": "A", "ffValue": "2,2" },
+        { "label": "D", "ffValue": "2,3" },
+        { "label": "G", "ffValue": "1,1" },
+        { "label": "B", "ffValue": "open" },
+        { "label": "e", "ffValue": "open" }
+      ]
+    },
+    {
+      "title": "D Major",
+      "strings": [
+        { "label": "E", "ffValue": "x" },
+        { "label": "A", "ffValue": "x" },
+        { "label": "D", "ffValue": "open" },
+        { "label": "G", "ffValue": "2,1" },
+        { "label": "B", "ffValue": "3,3" },
+        { "label": "e", "ffValue": "2,2" }
+      ]
+    }
+  ]
+}

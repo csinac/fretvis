@@ -3,9 +3,14 @@
 let collections = [];
 let activeCollectionId = null;
 let nextCollectionId = 1;
+let newCollectionCounter = 1; // Counter for default collection names like "Collection N"
 let domElements = {};
 let callbacks = {};
 const UNTITLED_COLLECTION_NAME = "untitled collection";
+const PRELOAD_FILES = [
+    'preload/basic_6_string_guitar_chords.json',
+    'preload/basic_4_string_guitar_chords.json'
+];
 
 // function generateCollectionId() { // Using Date.now().toString() for simplicity and uniqueness
 //     return `collection-${nextCollectionId++}`;
@@ -111,7 +116,7 @@ function renderGalleryList() {
 function addNewCollection() {
     saveActiveCollectionState(); // Save current active collection's state before adding a new one.
 
-    let defaultName = `Collection ${collections.length + 1}`;
+    let defaultName = `Collection ${newCollectionCounter}`;
     if (defaultName.trim() === "") {
         defaultName = UNTITLED_COLLECTION_NAME;
     }
@@ -134,6 +139,7 @@ function addNewCollection() {
     };
 
     collections.push(newCollection);
+    newCollectionCounter++; // Increment for the next new collection
     setActiveCollection(newCollection.id); // This will handle setting activeId, localStorage, and all UI updates.
 
     // Enable/disable remove button based on new collection count
@@ -214,7 +220,35 @@ export function updateActiveCollectionVisualControls(controlType, value) {
     }
 }
 
-export function initGallery(config) {
+async function fetchPreloadedCollections() {
+    const preloadedCollections = [];
+    for (const filePath of PRELOAD_FILES) {
+        try {
+            const response = await fetch(filePath);
+            if (!response.ok) {
+                console.warn(`[GalleryManager] Failed to fetch preloaded collection: ${filePath} - Status: ${response.status}`);
+                continue;
+            }
+            const collectionData = await response.json();
+            // Basic validation (can be expanded)
+            if (collectionData && collectionData.id && collectionData.name && Array.isArray(collectionData.fretboards)) {
+                preloadedCollections.push(collectionData);
+            } else {
+                console.warn(`[GalleryManager] Invalid format for preloaded collection: ${filePath}`);
+            }
+        } catch (error) {
+            console.error(`[GalleryManager] Error loading or parsing preloaded collection ${filePath}:`, error);
+        }
+    }
+    return preloadedCollections;
+}
+
+// Debug function to access collections from console
+export function getCollectionsForDebug() {
+    return collections;
+}
+
+export async function initGallery(config) {
     domElements = {
         fretboardGallery: config.fretboardGallery,
         addCollectionBtn: config.addCollectionBtn,
@@ -251,11 +285,46 @@ export function initGallery(config) {
         });
     }
 
+    const preloaded = await fetchPreloadedCollections();
     const storedCollectionsJSON = localStorage.getItem('fretboardCollections');
+    let localStorageCollections = [];
     if (storedCollectionsJSON) {
-        collections = JSON.parse(storedCollectionsJSON);
+        try {
+            localStorageCollections = JSON.parse(storedCollectionsJSON);
+        } catch (e) {
+            console.error("[GalleryManager] Error parsing collections from localStorage:", e);
+            localStorageCollections = [];
+        }
+    }
+
+    // Merge preloaded and localStorage collections
+    // localStorage takes precedence for matching IDs
+    const mergedCollections = [...preloaded];
+    localStorageCollections.forEach(storedCollection => {
+        const existingIndex = mergedCollections.findIndex(mc => mc.id === storedCollection.id);
+        if (existingIndex !== -1) {
+            mergedCollections[existingIndex] = storedCollection; // Overwrite with stored version
+        } else {
+            mergedCollections.push(storedCollection); // Add new from storage
+        }
+    });
+    collections = mergedCollections;
+
+    // Initialize newCollectionCounter based on existing collection names
+    if (collections.length > 0) {
+        let maxN = 0;
+        collections.forEach(c => {
+            const match = c.name.match(/^Collection (\d+)$/);
+            if (match && match[1]) {
+                const n = parseInt(match[1], 10);
+                if (n > maxN) {
+                    maxN = n;
+                }
+            }
+        });
+        newCollectionCounter = maxN + 1;
     } else {
-        collections = []; // Initialize as empty array if nothing in storage
+        newCollectionCounter = 1;
     }
 
     let activeIdFromStorage = localStorage.getItem('activeFretboardCollectionId');
@@ -285,13 +354,17 @@ export function initGallery(config) {
         nextCollectionId = 1;
     }
 
-    if (collections.length === 0) {
-        addNewCollection();
-    } else {
-        loadCollectionIntoUI(activeCollectionId);
-        renderGalleryList(); 
-        callbacks.renderDiagramsAndSaveState();
-    }
+    // Always add a new collection on startup and make it active, regardless of preloaded/stored collections.
+    // Nullify activeCollectionId before this specific addNewCollection call to prevent saveActiveCollectionState
+    // from overwriting a preloaded collection that might have been temporarily set as active.
+    activeCollectionId = null;
+    addNewCollection();
+    // The logic for what to display if collections array was empty before this is now handled by addNewCollection setting itself active.
+    // If there were items, addNewCollection still makes the new one active.
+    // If activeIdFromStorage was valid and pointed to an existing collection, it would have been loaded into UI,
+    // but addNewCollection() will now create a new one and make *that* one active.
+    // So, we don't need the explicit loadCollectionIntoUI/renderGalleryList/renderDiagramsAndSaveState here,
+    // as addNewCollection -> setActiveCollection handles these for the *newly added* collection.
 }
 
 export function handleFretboardChange() {

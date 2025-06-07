@@ -83,7 +83,7 @@
     import { createStringBlock, createFretView } from './fretboardBlocks.js';
     import { attachFretboardValidation, parseAndValidateFretboard } from './parseFretboard.js';
     import { renderFretboard, palette } from './renderFretboard.js';
-    import { initGallery, addFretboardToActiveCollection, handleFretboardChange, updateActiveCollectionVisualControls } from './galleryManager.js';
+    import { initGallery, addFretboardToActiveCollection, handleFretboardChange, updateActiveCollectionVisualControls, updateActiveCollectionName, getCollectionsForDebug } from './galleryManager.js';
     
     const fretboardGallery = document.getElementById('fretboard-gallery');
     const addFretBtn = document.querySelector('.add-fret-btn');
@@ -154,7 +154,7 @@
     // --- Initialization and Event Listeners ---
 
     // Initialize Gallery System
-    initGallery({
+    await initGallery({
         fretboardGallery: fretboardGallery,
         addCollectionBtn: addCollectionBtn,
         removeCollectionBtn: removeCollectionBtn,
@@ -189,6 +189,8 @@
 
     // Initial render of diagrams for the default collection is handled by initGallery.
 
+    // Make debug function available in console
+    window.viewCollections = getCollectionsForDebug;
     </script>
         </div>
     </div>

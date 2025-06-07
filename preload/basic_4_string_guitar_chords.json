@@ -1,0 +1,44 @@
+{
+  "id": "preloaded-4-string-guitar",
+  "name": "Basic 4-String Guitar Chords (DGBE)",
+  "handedness": "right",
+  "viewpoint": "top",
+  "fretboards": [
+    {
+      "title": "C Major",
+      "strings": [
+        { "label": "D", "ffValue": "2,2" },
+        { "label": "G", "ffValue": "open" },
+        { "label": "B", "ffValue": "1,1" },
+        { "label": "e", "ffValue": "open" }
+      ]
+    },
+    {
+      "title": "G Major",
+      "strings": [
+        { "label": "D", "ffValue": "open" },
+        { "label": "G", "ffValue": "open" },
+        { "label": "B", "ffValue": "open" },
+        { "label": "e", "ffValue": "3,3" }
+      ]
+    },
+    {
+      "title": "D Major",
+      "strings": [
+        { "label": "D", "ffValue": "2,1" },
+        { "label": "G", "ffValue": "2,2" },
+        { "label": "B", "ffValue": "2,3" },
+        { "label": "e", "ffValue": "open" }
+      ]
+    },
+    {
+      "title": "Am",
+      "strings": [
+        { "label": "D", "ffValue": "2,2" },
+        { "label": "G", "ffValue": "2,3" },
+        { "label": "B", "ffValue": "1,1" },
+        { "label": "e", "ffValue": "open" }
+      ]
+    }
+  ]
+}
