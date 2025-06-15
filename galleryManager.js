@@ -124,24 +124,62 @@ function switchCollection(collectionId) {
 
 function renderGalleryList() {
     domElements.collectionList.innerHTML = '';
+    
+    // Create section containers
+    const preloadedSection = document.createElement('div');
+    preloadedSection.className = 'collection-section';
+    const preloadedHeader = document.createElement('h3');
+    preloadedHeader.className = 'collection-section-header';
+    preloadedHeader.textContent = 'Preloaded Collections';
+    preloadedSection.appendChild(preloadedHeader);
+    
+    const userSection = document.createElement('div');
+    userSection.className = 'collection-section';
+    const userHeader = document.createElement('h3');
+    userHeader.className = 'collection-section-header';
+    userHeader.textContent = 'User Collections';
+    userSection.appendChild(userHeader);
+    
+    // Create lists for each section
+    const preloadedList = document.createElement('ul');
+    preloadedList.className = 'section-collection-list';
+    preloadedSection.appendChild(preloadedList);
+    
+    const userList = document.createElement('ul');
+    userList.className = 'section-collection-list';
+    userSection.appendChild(userList);
+    
+    // Sort collections into appropriate lists
+    let hasPreloaded = false;
+    let hasUser = false;
+    
     collections.forEach(collection => {
         const li = document.createElement('li');
-        
-        // Add readonly indicator for readonly collections
-        if (collection.readonly === true) {
-            li.textContent = collection.name + ' (Readonly)';
-            li.classList.add('readonly');
-        } else {
-            li.textContent = collection.name;
-        }
+        li.textContent = collection.name;
         
         li.dataset.collectionId = collection.id;
         if (collection.id === activeCollectionId) {
             li.classList.add('active');
         }
         li.addEventListener('click', () => switchCollection(collection.id));
-        domElements.collectionList.appendChild(li);
+        
+        if (collection.readonly === true) {
+            preloadedList.appendChild(li);
+            hasPreloaded = true;
+        } else {
+            userList.appendChild(li);
+            hasUser = true;
+        }
     });
+    
+    // Only show sections that have collections
+    if (hasPreloaded) {
+        domElements.collectionList.appendChild(preloadedSection);
+    }
+    
+    if (hasUser) {
+        domElements.collectionList.appendChild(userSection);
+    }
     
     // Only allow removing non-readonly collections
     const activeCollection = collections.find(c => c.id === activeCollectionId);

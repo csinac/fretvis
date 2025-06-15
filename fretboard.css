@@ -88,34 +88,42 @@ body {
     cursor: not-allowed;
 }
 #collection-list {
-    list-style-type: none;
     padding: 0;
     margin: 10px 0;
     flex-grow: 1;
     overflow-y: auto;
 }
-#collection-list li {
+
+.collection-section {
+    margin-bottom: 15px;
+}
+
+.collection-section-header {
+    font-size: 0.9em;
+    color: #555;
+    margin: 5px 0;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #eee;
+}
+
+.section-collection-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+.section-collection-list li {
     padding: 10px;
     border-bottom: 1px solid #eee;
     cursor: pointer;
     font-size: 0.95em;
 }
-#collection-list li:hover {
+.section-collection-list li:hover {
     background-color: #e9ecef;
 }
-#collection-list li.active {
+.section-collection-list li.active {
     background-color: #007bff;
     color: white;
     font-weight: bold;
-}
-
-#collection-list li.readonly {
-    font-style: italic;
-    position: relative;
-}
-
-#collection-list li.readonly.active {
-    background-color: #6c757d; /* Use a slightly different color for readonly active collections */
 }
 #main-content {
     flex-grow: 1;
