@@ -21,6 +21,9 @@ function saveActiveCollectionState() {
     if (!activeCollectionId) return;
     const activeCollection = collections.find(c => c.id === activeCollectionId);
     if (!activeCollection) return;
+    
+    // Skip saving changes if the collection is readonly
+    if (activeCollection.readonly === true) return;
 
     // Save collection name (title)
     if (activeCollection && domElements.collectionTitleInput) {
@@ -60,9 +63,25 @@ function loadCollectionIntoUI(collectionId) {
     // Load collection name (title) into input and main header
     if (domElements.collectionTitleInput) {
         domElements.collectionTitleInput.value = collection.name;
+        
+        // Disable title input if readonly
+        domElements.collectionTitleInput.disabled = collection.readonly === true;
+        
+        // Add visual indication for readonly status
+        if (collection.readonly === true) {
+            domElements.collectionTitleInput.classList.add('readonly');
+        } else {
+            domElements.collectionTitleInput.classList.remove('readonly');
+        }
     }
+    
     if (domElements.mainContentHeaderTitle) {
-        domElements.mainContentHeaderTitle.textContent = collection.name;
+        // Show readonly indicator in the main title if applicable
+        if (collection.readonly === true) {
+            domElements.mainContentHeaderTitle.textContent = collection.name + ' (Readonly)';
+        } else {
+            domElements.mainContentHeaderTitle.textContent = collection.name;
+        }
     }
 
     // Load and set handedness and viewpoint
@@ -107,7 +126,15 @@ function renderGalleryList() {
     domElements.collectionList.innerHTML = '';
     collections.forEach(collection => {
         const li = document.createElement('li');
-        li.textContent = collection.name; // Use the editable name
+        
+        // Add readonly indicator for readonly collections
+        if (collection.readonly === true) {
+            li.textContent = collection.name + ' (Readonly)';
+            li.classList.add('readonly');
+        } else {
+            li.textContent = collection.name;
+        }
+        
         li.dataset.collectionId = collection.id;
         if (collection.id === activeCollectionId) {
             li.classList.add('active');
@@ -115,7 +142,11 @@ function renderGalleryList() {
         li.addEventListener('click', () => switchCollection(collection.id));
         domElements.collectionList.appendChild(li);
     });
-    domElements.removeCollectionBtn.disabled = collections.length <= 1 || !activeCollectionId;
+    
+    // Only allow removing non-readonly collections
+    const activeCollection = collections.find(c => c.id === activeCollectionId);
+    domElements.removeCollectionBtn.disabled = collections.length <= 1 || !activeCollectionId || 
+        (activeCollection && activeCollection.readonly === true);
 }
 
 function addNewCollection() {
@@ -132,6 +163,7 @@ function addNewCollection() {
         id: newCollectionId,
         name: defaultName,
         nameChangedByUser: false, // New collections start with default names, not yet changed by user
+        readonly: false, // User-created collections are always editable
         handedness: 'right',
         viewpoint: 'top',
         fretboards: [{
@@ -230,13 +262,24 @@ function hasMeaningfulData(collection) {
 }
 
 function saveCollectionsToLocalStorage() {
-    const collectionsToSave = collections.filter(hasMeaningfulData);
+    // Only save collections that have meaningful data AND are not readonly
+    const collectionsToSave = collections.filter(collection => 
+        hasMeaningfulData(collection) && collection.readonly !== true
+    );
     localStorage.setItem('fretboardCollections', JSON.stringify(collectionsToSave));
     localStorage.setItem('activeFretboardCollectionId', activeCollectionId);
 }
 
 export function addFretboardToActiveCollection() {
     if (!activeCollectionId) return;
+    
+    // Check if active collection is readonly
+    const activeCollection = collections.find(c => c.id === activeCollectionId);
+    if (activeCollection && activeCollection.readonly === true) {
+        alert('This collection is readonly. You cannot add fretboards to it.');
+        return;
+    }
+    
     const newFretboardData = {
         title: '',
         strings: [

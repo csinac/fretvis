@@ -8,6 +8,8 @@
     --danger: #d32f2f;
     --placeholder-bg: #eee;
     --placeholder-border: #bbb;
+    --readonly-bg: #f0f0f0;
+    --readonly-border: #ccc;
     --placeholder-text: #888;
     --box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
@@ -76,6 +78,15 @@ body {
     border-radius: 4px;
     box-sizing: border-box;
 }
+
+/* Style for readonly input fields */
+.collection-title-control input[type="text"].readonly,
+.collection-title-control input[type="text"]:disabled {
+    background-color: var(--readonly-bg);
+    border-color: var(--readonly-border);
+    color: #666;
+    cursor: not-allowed;
+}
 #collection-list {
     list-style-type: none;
     padding: 0;
@@ -96,6 +107,15 @@ body {
     background-color: #007bff;
     color: white;
     font-weight: bold;
+}
+
+#collection-list li.readonly {
+    font-style: italic;
+    position: relative;
+}
+
+#collection-list li.readonly.active {
+    background-color: #6c757d; /* Use a slightly different color for readonly active collections */
 }
 #main-content {
     flex-grow: 1;

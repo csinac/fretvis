@@ -3,6 +3,7 @@
   "name": "Basic 4-String Guitar Chords (DGBE)",
   "handedness": "right",
   "viewpoint": "top",
+  "readonly": true,
   "fretboards": [
     {
       "title": "C Major",

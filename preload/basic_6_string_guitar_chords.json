@@ -3,6 +3,7 @@
   "name": "Basic 6-String Guitar Chords",
   "handedness": "right",
   "viewpoint": "top",
+  "readonly": true,
   "fretboards": [
     {
       "title": "C Major",
