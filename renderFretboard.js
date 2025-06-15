@@ -67,8 +67,15 @@ export function renderFretboard({
 
     // Determine fret range to display (based on original data, not displayStrings)
     let allFrettedNotes = [];
+    let hasZeroFret = false;
     data.strings.forEach(s => { // Use original data for fret range calculation
-        if (s.pairs) s.pairs.forEach(p => allFrettedNotes.push(p.fret));
+        if (s.pairs) s.pairs.forEach(p => {
+            if (p.fret === 0) {
+                hasZeroFret = true;
+            } else {
+                allFrettedNotes.push(p.fret);
+            }
+        });
     });
 
     let minDisplayFret = 1;
@@ -114,6 +121,31 @@ export function renderFretboard({
 
     // Draw frets (vertical lines)
     let currentX = fbX;
+    // Draw the zeroeth fret as a dotted line if we have any fret 0 notes
+    if (hasZeroFret) {
+        // For left-handed (effectiveIsLeftHanded), the zeroeth fret should be on the right side of the fretboard
+        // For right-handed, the zeroeth fret should be on the left side of the fretboard
+        const zeroFretX = effectiveIsLeftHanded ? 
+            (fbX + fretboardWidth + sidePadding/2) : // Left-handed: position on the right side
+            (fbX - sidePadding/2); // Right-handed: position on the left side
+            
+        ctx.setLineDash([5, 5]);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = palette.fret;
+        ctx.beginPath();
+        ctx.moveTo(zeroFretX, fbY);
+        ctx.lineTo(zeroFretX, fbY + fretboardHeight);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // Draw a small "0" label at the bottom
+        ctx.font = palette.fretNumberFont;
+        ctx.fillStyle = palette.fretNumber;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText('0', zeroFretX, fbY + fretboardHeight + 10);
+    }
+    
     // Draw the first vertical line (nut or lowest fret wire)
     ctx.lineWidth = (minDisplayFret === 1) ? 6 : 2;
     ctx.strokeStyle = (minDisplayFret === 1) ? palette.nut : palette.fret;
@@ -216,6 +248,30 @@ export function renderFretboard({
             ctx.fillText('X', openMutedMarkerX, stringY);
         } else if (stringData.pairs && stringData.pairs.length > 0) {
             stringData.pairs.forEach(pair => {
+                // Special handling for fret 0
+                if (pair.isZero) {
+                    // Draw a marker at the zeroeth fret position - match the dotted line position
+                    // For left-handed, position on the right side; for right-handed, position on the left side
+                    const zeroFretX = effectiveIsLeftHanded ? 
+                        (fbX + fretboardWidth + sidePadding/2) : // Left-handed: position on the right side
+                        (fbX - sidePadding/2); // Right-handed: position on the left side
+                    
+                    // Draw a circle at the zeroeth fret
+                    ctx.beginPath();
+                    ctx.arc(zeroFretX, stringY, 15, 0, 2 * Math.PI);
+                    ctx.fillStyle = palette.marker;
+                    ctx.fill();
+                    
+                    // Draw a "0" in the circle (no finger number for zeroeth fret)
+                    ctx.font = palette.font;
+                    ctx.fillStyle = palette.markerText;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('0', zeroFretX, stringY);
+                    return;
+                }
+                
+                // Skip if the fret is outside our display range
                 if (pair.fret < minDisplayFret || pair.fret > maxDisplayFret) return;
 
                 let visualSlotIndex; // 0-based index of the visual slot from the left

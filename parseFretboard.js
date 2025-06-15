@@ -44,7 +44,7 @@ export function parseAndValidateFretboard(fretView) {
                     break;
                 }
                 let fretNum = parseInt(fret, 10);
-                if (fretNum < 1 || fretNum > 99) {
+                if (fretNum < 0 || fretNum > 99) {
                     error = `Fret number out of range: '${fret}' in string ${i + 1}`;
                     break;
                 }
@@ -54,8 +54,16 @@ export function parseAndValidateFretboard(fretView) {
                 }
                 seenFrets.add(fretNum);
                 finger = finger.slice(0, 2);
-                stringData.pairs.push({ fret: fretNum, finger });
-                usedFretsOnThisString.push(fretNum);
+                
+                // Special handling for fret 0 - no finger annotation
+                if (fretNum === 0) {
+                    // For fret 0, we don't use finger annotations
+                    stringData.pairs.push({ fret: fretNum, isZero: true });
+                } else {
+                    stringData.pairs.push({ fret: fretNum, finger });
+                    // Only add non-zero frets to usedFretsOnThisString for range calculations
+                    usedFretsOnThisString.push(fretNum);
+                }
             }
             if (error) break; // Stop processing this fretView if an error occurred in pairs
         } else {
