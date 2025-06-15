@@ -13,6 +13,10 @@
             <div class="gallery-controls">
                 <button id="add-collection-btn" type="button">Add New Collection</button>
                 <button id="remove-collection-btn" type="button" disabled>Remove Selected Collection</button>
+                <div class="import-export-controls">
+                    <button id="export-gallery-btn" type="button">Export Gallery</button>
+                    <button id="import-gallery-btn" type="button">Import Gallery</button>
+                </div>
             </div>
             <div class="collection-title-control">
                 <label for="collection-title-input">Collection Title:</label>
@@ -24,7 +28,10 @@
         </div>
         <div id="main-content">
             <div class="container">
-        <h1 id="main-content-header-title">Fretboard Visualiser</h1>
+        <div class="main-header">
+            <h1 id="main-content-header-title">Fretboard Visualiser</h1>
+            <button id="export-collection-btn" type="button">Export Collection</button>
+        </div>
         <p style="margin-bottom: 12px;">A work-in-progress vibe coding experiment.</p>
         <p>
             Add fretboards to create fretboard diagrams.<br/>
@@ -153,22 +160,30 @@
 
     // --- Initialization and Event Listeners ---
 
+    // Get reference to the export/import buttons
+    const exportGalleryBtn = document.getElementById('export-gallery-btn');
+    const exportCollectionBtn = document.getElementById('export-collection-btn');
+    const importGalleryBtn = document.getElementById('import-gallery-btn');
+
     // Initialize Gallery System
     await initGallery({
         fretboardGallery: fretboardGallery,
         addCollectionBtn: addCollectionBtn,
         removeCollectionBtn: removeCollectionBtn,
+        exportGalleryBtn: exportGalleryBtn,
+        importGalleryBtn: importGalleryBtn,
+        exportCollectionBtn: exportCollectionBtn,
         collectionList: collectionList,
         collectionTitleInput: collectionTitleInput, 
         handednessRadios: handednessRadios,         
         viewpointRadios: viewpointRadios,           
-        mainContentHeaderTitle: mainContentHeaderTitle, // Added this line
+        mainContentHeaderTitle: mainContentHeaderTitle,
         createFretView: createFretView, 
         attachFretboardValidation: attachFretboardValidation, 
         renderDiagrams: renderAllFretboardDiagrams, 
         renderDiagramsAndSaveState: renderDiagramsAndHandleFretboardChange,
-        openFretInput: openFretInput, // Pass the function itself
-        closeAllFretInputs: closeAllFretInputs // Pass the function itself
+        openFretInput: openFretInput,
+        closeAllFretInputs: closeAllFretInputs
     });
 
     // Event listener for the main 'Add Fretboard' button (delegates to galleryManager)

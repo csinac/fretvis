@@ -129,8 +129,64 @@ body {
     flex-grow: 1;
     padding: 20px;
     overflow-y: auto;
-    background-color: #fff;
 }
+
+.main-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.main-header h1 {
+    margin: 0;
+}
+
+#export-collection-btn {
+    padding: 5px 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#export-collection-btn:hover {
+    background-color: #45a049;
+}
+
+.import-export-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    gap: 10px;
+}
+
+#export-gallery-btn, #import-gallery-btn {
+    padding: 5px 10px;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    flex: 1;
+}
+
+#export-gallery-btn {
+    background-color: #2196F3;
+}
+
+#export-gallery-btn:hover {
+    background-color: #0b7dda;
+}
+
+#import-gallery-btn {
+    background-color: #4CAF50;
+}
+
+#import-gallery-btn:hover {
+    background-color: #45a049;
+}
+
 .container {
     max-width: 900px;
     margin: 0 auto;

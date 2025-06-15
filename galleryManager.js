@@ -396,6 +396,128 @@ export function getCollectionsForDebug() {
     return collections;
 }
 
+// Exports all user collections (excluding readonly/preloaded collections) as JSON
+export function exportGallery() {
+    // Filter out readonly collections
+    const userCollections = collections.filter(collection => collection.readonly !== true);
+    if (userCollections.length === 0) {
+        alert('No user collections to export.');
+        return;
+    }
+    
+    // Create a formatted JSON string
+    const jsonData = JSON.stringify(userCollections, null, 2);
+    
+    // Create a data URI and trigger download
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(jsonData);
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "fretvis_gallery_export.json");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+}
+
+// Imports collections from a JSON file
+export function importGallery() {
+    // Create a file input element
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'application/json';
+    
+    fileInput.onchange = function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                
+                // Validate the imported data is an array
+                if (!Array.isArray(importedData)) {
+                    alert('Invalid import format. Expected an array of collections.');
+                    return;
+                }
+                
+                // Validate each collection and generate new IDs to avoid conflicts
+                let validCollections = 0;
+                const newCollections = [];
+                
+                importedData.forEach(collection => {
+                    // Basic validation
+                    if (!collection.name || !Array.isArray(collection.fretboards)) {
+                        console.warn('Skipping invalid collection:', collection);
+                        return;
+                    }
+                    
+                    // Create a new collection with a new ID to avoid conflicts
+                    const newCollection = {
+                        ...collection,
+                        id: `collection-${Date.now()}-${nextCollectionId++}`,
+                        readonly: false, // Ensure imported collections are editable
+                        importedAt: new Date().toISOString() // Mark as imported
+                    };
+                    
+                    newCollections.push(newCollection);
+                    validCollections++;
+                });
+                
+                if (validCollections === 0) {
+                    alert('No valid collections found in the import file.');
+                    return;
+                }
+                
+                // Add the new collections to the existing collections
+                collections.push(...newCollections);
+                
+                // Set the first imported collection as active
+                if (newCollections.length > 0) {
+                    setActiveCollection(newCollections[0].id);
+                }
+                
+                // Save to local storage and update the UI
+                saveCollectionsToLocalStorage();
+                renderGalleryList();
+                
+                alert(`Successfully imported ${validCollections} collection(s).`);
+            } catch (error) {
+                console.error('Error importing collections:', error);
+                alert('Error importing collections. Please check the file format.');
+            }
+        };
+        
+        reader.readAsText(file);
+    };
+    
+    // Trigger the file picker dialog
+    fileInput.click();
+}
+
+// Exports a single collection as JSON
+export function exportCollection(collectionId) {
+    const collection = collections.find(c => c.id === collectionId);
+    if (!collection) {
+        alert('Collection not found.');
+        return;
+    }
+    
+    // Wrap the collection in an array for format consistency
+    const collectionArray = [collection];
+    
+    // Create a formatted JSON string
+    const jsonData = JSON.stringify(collectionArray, null, 2);
+    
+    // Create a data URI and trigger download
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(jsonData);
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `fretvis_collection_${collection.name.replace(/\s+/g, '_')}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+}
+
 export async function initGallery(config) {
     const rawStoredCollections = localStorage.getItem('fretboardCollections');
     const rawActiveId = localStorage.getItem('activeFretboardCollectionId');
@@ -403,6 +525,9 @@ export async function initGallery(config) {
         fretboardGallery: config.fretboardGallery,
         addCollectionBtn: config.addCollectionBtn,
         removeCollectionBtn: config.removeCollectionBtn,
+        exportGalleryBtn: config.exportGalleryBtn,
+        importGalleryBtn: config.importGalleryBtn,
+        exportCollectionBtn: config.exportCollectionBtn,
         collectionList: config.collectionList,
         collectionTitleInput: config.collectionTitleInput, 
         handednessRadios: config.handednessRadios,       
@@ -420,6 +545,25 @@ export async function initGallery(config) {
 
     domElements.addCollectionBtn.addEventListener('click', addNewCollection);
     domElements.removeCollectionBtn.addEventListener('click', removeActiveCollection);
+    
+    // Add event listeners for export/import buttons
+    if (domElements.exportGalleryBtn) {
+        domElements.exportGalleryBtn.addEventListener('click', exportGallery);
+    }
+    
+    if (domElements.importGalleryBtn) {
+        domElements.importGalleryBtn.addEventListener('click', importGallery);
+    }
+    
+    if (domElements.exportCollectionBtn) {
+        domElements.exportCollectionBtn.addEventListener('click', () => {
+            if (activeCollectionId) {
+                exportCollection(activeCollectionId);
+            } else {
+                alert('No collection is currently selected.');
+            }
+        });
+    }
 
     if (domElements.collectionTitleInput) {
         domElements.collectionTitleInput.addEventListener('input', (e) => {
